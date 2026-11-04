@@ -369,7 +369,7 @@ fun ModernBottomNavBar(
                         TransaksiTwoToneNavIcon(
                             themeColor = AccentBlue,
                             isSelected = selectedTab == 0,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 )
@@ -386,7 +386,7 @@ fun ModernBottomNavBar(
                         DasborTwoToneNavIcon(
                             themeColor = AccentBlue,
                             isSelected = selectedTab == 1,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 )
@@ -403,7 +403,7 @@ fun ModernBottomNavBar(
                         RingkasanTwoToneNavIcon(
                             themeColor = AccentBlue,
                             isSelected = selectedTab == 2,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 )
@@ -420,7 +420,7 @@ fun ModernBottomNavBar(
                         AkunTwoToneNavIcon(
                             themeColor = AccentBlue,
                             isSelected = selectedTab == 3,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 )
@@ -437,7 +437,7 @@ fun ModernBottomNavBar(
                         PengaturanTwoToneNavIcon(
                             themeColor = AccentBlue,
                             isSelected = selectedTab == 4,
-                            modifier = Modifier.size(22.dp)
+                            modifier = Modifier.size(28.dp)
                         )
                     }
                 )
@@ -457,7 +457,7 @@ private fun NavTabItem(
     icon: @Composable () -> Unit
 ) {
     val pillBgColor by androidx.compose.animation.animateColorAsState(
-        targetValue = if (isSelected) activeColor.copy(alpha = 0.22f) else Color.Transparent,
+        targetValue = if (isSelected) activeColor.copy(alpha = 0.18f) else Color.Transparent,
         animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
         label = "pillBgColor"
     )
@@ -468,7 +468,7 @@ private fun NavTabItem(
     )
 
     val scale by androidx.compose.animation.core.animateFloatAsState(
-        targetValue = if (isSelected) 1.08f else 1.0f,
+        targetValue = if (isSelected) 1.05f else 1.0f,
         animationSpec = androidx.compose.animation.core.spring(
             dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
             stiffness = androidx.compose.animation.core.Spring.StiffnessLow
@@ -476,33 +476,34 @@ private fun NavTabItem(
         label = "scale"
     )
 
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
+    Box(
         modifier = modifier
+            .padding(horizontal = 2.dp)
             .clip(RoundedCornerShape(16.dp))
             .clickable { onClick() }
-            .padding(horizontal = 2.dp, vertical = 4.dp)
-            .testTag(tag)
+            .testTag(tag),
+        contentAlignment = Alignment.Center
     ) {
-        Box(
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
             modifier = Modifier
-                .size(height = 30.dp, width = 48.dp)
-                .clip(RoundedCornerShape(15.dp))
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(14.dp))
                 .background(pillBgColor)
                 .then(
                     if (isSelected) {
                         Modifier.border(
                             width = 1.dp,
-                            color = activeColor.copy(alpha = 0.4f),
-                            shape = RoundedCornerShape(15.dp)
+                            color = activeColor.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(14.dp)
                         )
                     } else Modifier
-                ),
-            contentAlignment = Alignment.Center
+                )
+                .padding(horizontal = 3.dp, vertical = 6.dp)
         ) {
             Box(
                 modifier = Modifier
-                    .size(22.dp)
                     .graphicsLayer {
                         scaleX = scale
                         scaleY = scale
@@ -511,25 +512,16 @@ private fun NavTabItem(
             ) {
                 icon()
             }
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                color = contentColor,
+                maxLines = 1
+            )
         }
-
-        Spacer(modifier = Modifier.height(3.dp))
-
-        Text(
-            text = title,
-            fontSize = 10.5.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = contentColor,
-            maxLines = 1
-        )
-
-        // Glowing micro dot indicator for active tab
-        Spacer(modifier = Modifier.height(2.dp))
-        Box(
-            modifier = Modifier
-                .size(3.dp)
-                .clip(CircleShape)
-                .background(if (isSelected) activeColor else Color.Transparent)
-        )
     }
 }

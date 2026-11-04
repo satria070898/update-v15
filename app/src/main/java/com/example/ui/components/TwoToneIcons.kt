@@ -565,8 +565,95 @@ fun RingkasanTwoToneNavIcon(
 }
 
 /**
- * Akun: Dompet tema dengan penutup/kancing emas kuning fix.
- * Ketika tidak dipilih, berubah warna menjadi abu-abu.
+ * Nilai Bersih: 3 batang grafik vertikal naik (themeColor) dengan panah melengkung kuning fix
+ * mengarah ke atas-kanan persis seperti di gambar referensi.
+ */
+@Composable
+fun NilaiBersihTwoToneNavIcon(
+    themeColor: Color,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier.size(22.dp)
+) {
+    val effTheme by animateColorAsState(
+        targetValue = if (isSelected) themeColor else InactiveNavGrey,
+        label = "nilaiBersihTheme"
+    )
+    val effYellow by animateColorAsState(
+        targetValue = if (isSelected) FixedYellow else InactiveNavGreyLight,
+        label = "nilaiBersihYellow"
+    )
+
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        // 1. 3 Batang Vertikal Naik (Theme Color)
+        val barW = w * 0.20f
+        val gap = w * 0.08f
+        val startX = (w - (barW * 3 + gap * 2)) / 2f
+        val botY = h * 0.94f
+        val radius = CornerRadius(2.8.dp.toPx(), 2.8.dp.toPx())
+
+        // Batang 1 (Kiri - Terpendek)
+        val h1 = h * 0.32f
+        drawRoundRect(
+            color = effTheme.copy(alpha = 0.88f),
+            topLeft = Offset(startX, botY - h1),
+            size = Size(barW, h1),
+            cornerRadius = radius
+        )
+
+        // Batang 2 (Tengah - Sedang)
+        val h2 = h * 0.52f
+        drawRoundRect(
+            color = effTheme,
+            topLeft = Offset(startX + barW + gap, botY - h2),
+            size = Size(barW, h2),
+            cornerRadius = radius
+        )
+
+        // Batang 3 (Kanan - Tertinggi)
+        val h3 = h * 0.72f
+        drawRoundRect(
+            color = effTheme,
+            topLeft = Offset(startX + (barW + gap) * 2, botY - h3),
+            size = Size(barW, h3),
+            cornerRadius = radius
+        )
+
+        // 2. Panah Melengkung Kuning Naik ke Atas Kanan (Fixed Yellow)
+        val arrowPath = Path().apply {
+            moveTo(startX - w * 0.02f, botY - h1 * 0.45f)
+            quadraticTo(
+                startX + barW + gap * 0.5f,
+                botY - h2 * 0.96f,
+                w * 0.80f,
+                h * 0.24f
+            )
+        }
+        drawPath(
+            path = arrowPath,
+            color = effYellow,
+            style = Stroke(width = 2.6.dp.toPx(), cap = StrokeCap.Round)
+        )
+
+        // Kepala Panah (Arrowhead di ujung kanan atas, mengarah 45 derajat)
+        val tipX = w * 0.88f
+        val tipY = h * 0.16f
+        val headPath = Path().apply {
+            moveTo(tipX, tipY)
+            lineTo(tipX - w * 0.22f, tipY + h * 0.04f)
+            lineTo(tipX - w * 0.12f, tipY + h * 0.14f)
+            lineTo(tipX - w * 0.04f, tipY + h * 0.22f)
+            close()
+        }
+        drawPath(path = headPath, color = effYellow)
+    }
+}
+
+/**
+ * Akun: Dompet tema dengan koin emas yang menonjol keluar di bagian atas
+ * persis seperti di gambar referensi.
  */
 @Composable
 fun AkunTwoToneNavIcon(
@@ -587,47 +674,41 @@ fun AkunTwoToneNavIcon(
         val w = size.width
         val h = size.height
 
-        // 1. Badan Dompet
+        // 1. Koin Emas Menonjol di Atas Dompet (Fixed Yellow)
+        val coinCenter = Offset(w * 0.50f, h * 0.32f)
+        val coinR = w * 0.18f
+        drawCircle(color = effYellow, radius = coinR, center = coinCenter)
+        drawCircle(
+            color = if (isSelected) FixedYellowDark else InactiveNavGrey,
+            radius = coinR * 0.75f,
+            center = coinCenter,
+            style = Stroke(1.dp.toPx())
+        )
+
+        // 2. Badan Dompet (Theme Color)
         val wallW = w * 0.76f
-        val wallH = h * 0.60f
+        val wallH = h * 0.56f
         val wallX = (w - wallW) / 2f
-        val wallY = h * 0.22f
+        val wallY = h * 0.36f
+        val wallRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx())
 
         drawRoundRect(
             color = effTheme,
             topLeft = Offset(wallX, wallY),
             size = Size(wallW, wallH),
-            cornerRadius = CornerRadius(5.dp.toPx(), 5.dp.toPx())
+            cornerRadius = wallRadius
         )
 
-        // Garis lipatan dompet
+        // Lekukan kantong dompet di tengah atas
+        val foldPath = Path().apply {
+            moveTo(wallX, wallY + wallH * 0.26f)
+            lineTo(wallX + wallW * 0.36f, wallY + wallH * 0.26f)
+            lineTo(wallX + wallW * 0.50f, wallY + wallH * 0.40f)
+            lineTo(wallX + wallW * 0.64f, wallY + wallH * 0.26f)
+            lineTo(wallX + wallW, wallY + wallH * 0.26f)
+        }
         val foldColor = if (isSelected) Color.White.copy(alpha = 0.35f) else Color.White.copy(alpha = 0.2f)
-        drawLine(
-            color = foldColor,
-            start = Offset(wallX, wallY + wallH * 0.32f),
-            end = Offset(wallX + wallW, wallY + wallH * 0.32f),
-            strokeWidth = 1.2.dp.toPx()
-        )
-
-        // 2. Clasp / Kancing Pengait Dompet
-        val claspW = wallW * 0.30f
-        val claspH = wallH * 0.38f
-        val claspX = wallX + wallW - claspW * 0.85f
-        val claspY = wallY + (wallH - claspH) / 2f
-
-        drawRoundRect(
-            color = effYellow,
-            topLeft = Offset(claspX, claspY),
-            size = Size(claspW, claspH),
-            cornerRadius = CornerRadius(3.dp.toPx(), 3.dp.toPx())
-        )
-
-        // Titik kancing kecil
-        drawCircle(
-            color = Color(0xFF131822),
-            radius = 1.6.dp.toPx(),
-            center = Offset(claspX + claspW * 0.45f, claspY + claspH / 2f)
-        )
+        drawPath(path = foldPath, color = foldColor, style = Stroke(1.2.dp.toPx(), cap = StrokeCap.Round))
     }
 }
 
@@ -700,6 +781,181 @@ fun PengaturanTwoToneNavIcon(
             color = Color(0xFF131822),
             radius = innerR * 0.42f,
             center = center
+        )
+    }
+}
+
+/**
+ * Aset (Nav/Tab): Berlian faceted dengan badan utama themeColor dan kilauan mahkota kuning fix.
+ * Ketika tidak dipilih, berubah warna menjadi abu-abu.
+ */
+@Composable
+fun AsetTwoToneNavIcon(
+    themeColor: Color,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier.size(22.dp)
+) {
+    val effTheme by animateColorAsState(
+        targetValue = if (isSelected) themeColor else InactiveNavGrey,
+        label = "asetTheme"
+    )
+    val effYellow by animateColorAsState(
+        targetValue = if (isSelected) FixedYellow else InactiveNavGreyLight,
+        label = "asetYellow"
+    )
+
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        val topY = h * 0.26f
+        val midY = h * 0.50f
+        val botY = h * 0.90f
+
+        val leftX = w * 0.14f
+        val rightX = w * 0.86f
+        val midX = w * 0.50f
+        val topL = w * 0.32f
+        val topR = w * 0.68f
+
+        // 1. Lower Pavilion (Faceted Bottom Triangle)
+        val lowerFacet = Path().apply {
+            moveTo(leftX, midY)
+            lineTo(rightX, midY)
+            lineTo(midX, botY)
+            close()
+        }
+        drawPath(path = lowerFacet, color = effTheme)
+
+        // Center lower facet dividing lines
+        val facetLine1 = Path().apply {
+            moveTo(topL, midY)
+            lineTo(midX, botY)
+        }
+        val facetLine2 = Path().apply {
+            moveTo(topR, midY)
+            lineTo(midX, botY)
+        }
+        val strokeColor = if (isSelected) Color.White.copy(alpha = 0.40f) else Color.White.copy(alpha = 0.22f)
+        drawPath(path = facetLine1, color = strokeColor, style = Stroke(1.1.dp.toPx()))
+        drawPath(path = facetLine2, color = strokeColor, style = Stroke(1.1.dp.toPx()))
+
+        // 2. Upper Crown Facets
+        val crownLeft = Path().apply {
+            moveTo(leftX, midY)
+            lineTo(topL, topY)
+            lineTo(topL, midY)
+            close()
+        }
+        val crownRight = Path().apply {
+            moveTo(rightX, midY)
+            lineTo(topR, topY)
+            lineTo(topR, midY)
+            close()
+        }
+        drawPath(path = crownLeft, color = effTheme.copy(alpha = 0.88f))
+        drawPath(path = crownRight, color = effTheme.copy(alpha = 0.88f))
+
+        // Center Table facet
+        val tablePath = Path().apply {
+            moveTo(topL, topY)
+            lineTo(topR, topY)
+            lineTo(midX, midY)
+            close()
+        }
+        drawPath(path = tablePath, color = effTheme.copy(alpha = 0.95f))
+
+        // Outline table top
+        drawLine(
+            color = strokeColor,
+            start = Offset(topL, topY),
+            end = Offset(topR, topY),
+            strokeWidth = 1.1.dp.toPx()
+        )
+
+        // 3. Sparkle 4-pointed Star at Top-Right (Fixed Yellow saat aktif, abu-abu saat tidak aktif)
+        val starCx = w * 0.82f
+        val starCy = h * 0.20f
+        val starR = w * 0.16f
+        val starInnerR = starR * 0.32f
+        val starPath = Path().apply {
+            moveTo(starCx, starCy - starR)
+            lineTo(starCx + starInnerR, starCy - starInnerR)
+            lineTo(starCx + starR, starCy)
+            lineTo(starCx + starInnerR, starCy + starInnerR)
+            lineTo(starCx, starCy + starR)
+            lineTo(starCx - starInnerR, starCy + starInnerR)
+            lineTo(starCx - starR, starCy)
+            lineTo(starCx - starInnerR, starCy - starInnerR)
+            close()
+        }
+        drawPath(path = starPath, color = effYellow)
+    }
+}
+
+/**
+ * Utang (Nav/Tab): Handshake / Perjanjian dengan tema themeColor dan aksen emas kuning fix.
+ * Ketika tidak dipilih, berubah warna menjadi abu-abu.
+ */
+@Composable
+fun UtangTwoToneNavIcon(
+    themeColor: Color,
+    isSelected: Boolean,
+    modifier: Modifier = Modifier.size(22.dp)
+) {
+    val effTheme by animateColorAsState(
+        targetValue = if (isSelected) themeColor else InactiveNavGrey,
+        label = "utangTheme"
+    )
+    val effYellow by animateColorAsState(
+        targetValue = if (isSelected) FixedYellow else InactiveNavGreyLight,
+        label = "utangYellow"
+    )
+
+    Canvas(modifier = modifier) {
+        val w = size.width
+        val h = size.height
+
+        // 1. Tangan Kiri (Lengan bawah kiri ke tengah)
+        val handLeft = Path().apply {
+            moveTo(w * 0.10f, h * 0.62f)
+            lineTo(w * 0.34f, h * 0.40f)
+            lineTo(w * 0.52f, h * 0.52f)
+            lineTo(w * 0.38f, h * 0.76f)
+            lineTo(w * 0.16f, h * 0.78f)
+            close()
+        }
+        drawPath(path = handLeft, color = effTheme)
+
+        // 2. Tangan Kanan (Lengan atas kanan ke tengah saling mengunci)
+        val handRight = Path().apply {
+            moveTo(w * 0.90f, h * 0.42f)
+            lineTo(w * 0.66f, h * 0.64f)
+            lineTo(w * 0.48f, h * 0.52f)
+            lineTo(w * 0.62f, h * 0.28f)
+            lineTo(w * 0.84f, h * 0.26f)
+            close()
+        }
+        drawPath(path = handRight, color = effTheme.copy(alpha = 0.90f))
+
+        // Garis batas jabat tangan
+        drawLine(
+            color = if (isSelected) Color.White.copy(alpha = 0.5f) else Color.White.copy(alpha = 0.25f),
+            start = Offset(w * 0.44f, h * 0.46f),
+            end = Offset(w * 0.56f, h * 0.58f),
+            strokeWidth = 1.3.dp.toPx(),
+            cap = StrokeCap.Round
+        )
+
+        // 3. Koin Emas / Segel Perjanjian di atas jabat tangan (Fixed Yellow saat aktif, abu-abu saat tidak aktif)
+        val coinCenter = Offset(w * 0.50f, h * 0.24f)
+        val coinR = w * 0.15f
+        drawCircle(color = effYellow, radius = coinR, center = coinCenter)
+        drawCircle(
+            color = if (isSelected) FixedYellowDark else InactiveNavGrey,
+            radius = coinR * 0.70f,
+            center = coinCenter,
+            style = Stroke(1.dp.toPx())
         )
     }
 }

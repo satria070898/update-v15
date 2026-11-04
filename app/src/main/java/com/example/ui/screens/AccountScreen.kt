@@ -27,6 +27,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.input.pointer.pointerInput
 import kotlin.math.roundToInt
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.ui.graphics.graphicsLayer
+import com.example.ui.components.NilaiBersihTwoToneNavIcon
+import com.example.ui.components.RingkasanTwoToneNavIcon
+import com.example.ui.components.AkunTwoToneNavIcon
+import com.example.ui.components.AsetTwoToneNavIcon
+import com.example.ui.components.UtangTwoToneNavIcon
+import com.example.ui.components.InactiveNavGrey
 import com.example.ui.components.ChartHistoricalDetailCard
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -1731,69 +1740,85 @@ fun AccountScreen(
             }
         }
 
-        // Fixed Sub-Tabs Toolbar: Nilai Bersih, Akun, Aset, Utang (Lebih pendek & teks di bawah icon ukuran kecil)
-        Box(
+        // Sub-Tabs Toolbar: Nilai Bersih, Akun, Aset, Utang (panjang semula full-width & icon besar)
+        Surface(
+            shape = RoundedCornerShape(20.dp),
+            color = Color(0xFF131722),
+            border = BorderStroke(1.dp, DarkCardBorder.copy(alpha = 0.75f)),
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            contentAlignment = Alignment.Center
+                .padding(horizontal = 16.dp, vertical = 6.dp)
         ) {
-            Surface(
-                shape = RoundedCornerShape(14.dp),
-                color = DarkSurface,
-                border = BorderStroke(1.dp, DarkCardBorder.copy(alpha = 0.8f)),
+            Row(
                 modifier = Modifier
-                    .fillMaxWidth(0.60f)
+                    .fillMaxWidth()
+                    .padding(horizontal = 4.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 2.dp, vertical = 2.dp),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    val subTabs = listOf(
-                        Triple(0, "Nilai Bersih", Icons.Default.ShowChart to Color(0xFF3B82F6)),
-                        Triple(1, "Akun", Icons.Default.Wallet to Color(0xFF06B6D4)),
-                        Triple(2, "Aset", Icons.Default.Diamond to Color(0xFFF59E0B)),
-                        Triple(3, "Utang", Icons.Default.Handshake to Color(0xFFEF4444))
-                    )
-
-                    subTabs.forEach { (index, title, iconAndColor) ->
-                        val (icon, tabColor) = iconAndColor
-                        val isSelected = subTab == index
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = if (isSelected) tabColor.copy(alpha = 0.22f) else Color.Transparent,
-                            border = if (isSelected) BorderStroke(1.dp, tabColor.copy(alpha = 0.65f)) else null,
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(8.dp))
-                                .clickable { viewModel.setAccountSubTab(index) }
-                        ) {
-                            Column(
-                                modifier = Modifier.padding(vertical = 3.dp, horizontal = 1.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = icon,
-                                    contentDescription = null,
-                                    tint = if (isSelected) tabColor else TextMuted,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.height(1.dp))
-                                Text(
-                                    text = title,
-                                    fontSize = 8.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else TextMuted,
-                                    maxLines = 1
-                                )
-                            }
-                        }
+                // Tab 0: Nilai Bersih (3 Batang vertikal + panah kuning melengkung naik)
+                AccountSubTabItem(
+                    title = "Nilai Bersih",
+                    isSelected = subTab == 0,
+                    activeColor = AccentBlue,
+                    onClick = { viewModel.setAccountSubTab(0) },
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        NilaiBersihTwoToneNavIcon(
+                            themeColor = AccentBlue,
+                            isSelected = subTab == 0,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
-                }
+                )
+
+                // Tab 1: Akun (Dompet dengan koin emas menonjol di atas)
+                AccountSubTabItem(
+                    title = "Akun",
+                    isSelected = subTab == 1,
+                    activeColor = AccentBlue,
+                    onClick = { viewModel.setAccountSubTab(1) },
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        AkunTwoToneNavIcon(
+                            themeColor = AccentBlue,
+                            isSelected = subTab == 1,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                )
+
+                // Tab 2: Aset (Berlian faceted 3D dengan bintang berkilau 4-titik di kanan atas)
+                AccountSubTabItem(
+                    title = "Aset",
+                    isSelected = subTab == 2,
+                    activeColor = AccentBlue,
+                    onClick = { viewModel.setAccountSubTab(2) },
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        AsetTwoToneNavIcon(
+                            themeColor = AccentBlue,
+                            isSelected = subTab == 2,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                )
+
+                // Tab 3: Utang (Jabat tangan handshake dengan koin bulat di atas tengah)
+                AccountSubTabItem(
+                    title = "Utang",
+                    isSelected = subTab == 3,
+                    activeColor = AccentBlue,
+                    onClick = { viewModel.setAccountSubTab(3) },
+                    modifier = Modifier.weight(1f),
+                    icon = {
+                        UtangTwoToneNavIcon(
+                            themeColor = AccentBlue,
+                            isSelected = subTab == 3,
+                            modifier = Modifier.size(28.dp)
+                        )
+                    }
+                )
             }
         }
 
@@ -3057,4 +3082,81 @@ fun PayoffPlanDialog(
             }
         }
     )
+}
+
+@Composable
+private fun AccountSubTabItem(
+    title: String,
+    isSelected: Boolean,
+    activeColor: Color = AccentBlue,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    icon: @Composable () -> Unit
+) {
+    val pillBgColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isSelected) Color(0xFF1D2331) else Color.Transparent,
+        animationSpec = androidx.compose.animation.core.spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+        label = "subTabPillBg"
+    )
+
+    val contentColor by androidx.compose.animation.animateColorAsState(
+        targetValue = if (isSelected) Color.White else Color(0xFFA0ABBA),
+        label = "subTabContentColor"
+    )
+
+    val scale by androidx.compose.animation.core.animateFloatAsState(
+        targetValue = if (isSelected) 1.05f else 1.0f,
+        animationSpec = androidx.compose.animation.core.spring(
+            dampingRatio = androidx.compose.animation.core.Spring.DampingRatioMediumBouncy,
+            stiffness = androidx.compose.animation.core.Spring.StiffnessLow
+        ),
+        label = "subTabScale"
+    )
+
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(20.dp))
+            .clickable { onClick() },
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(20.dp))
+                .background(pillBgColor)
+                .then(
+                    if (isSelected) {
+                        Modifier.border(
+                            width = 1.dp,
+                            color = Color(0xFF2C3549),
+                            shape = RoundedCornerShape(20.dp)
+                        )
+                    } else Modifier
+                )
+                .padding(vertical = 6.dp, horizontal = 2.dp)
+        ) {
+            Box(
+                modifier = Modifier
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                icon()
+            }
+
+            Spacer(modifier = Modifier.height(3.dp))
+
+            Text(
+                text = title,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                color = contentColor,
+                maxLines = 1
+            )
+        }
+    }
 }

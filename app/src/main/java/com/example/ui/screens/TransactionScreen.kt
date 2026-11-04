@@ -388,19 +388,31 @@ fun TransactionScreen(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    // Search Icon
+                    // Search Icon with active filter indicator
                     IconButton(
                         onClick = { viewModel.toggleSearch() },
                         modifier = Modifier
                             .size(36.dp)
                             .testTag("btn_search_toggle")
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Search,
-                            contentDescription = "Cari",
-                            tint = if (isSearchOpen) AccentBlueBright else TextWhite,
-                            modifier = Modifier.size(20.dp)
-                        )
+                        val isFilterActive = selectedTypeFilter != "Semua" || searchQuery.isNotBlank()
+                        BadgedBox(
+                            badge = {
+                                if (isFilterActive && !isSearchOpen) {
+                                    Badge(
+                                        containerColor = AccentBlue,
+                                        modifier = Modifier.size(7.dp)
+                                    )
+                                }
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Search,
+                                contentDescription = "Cari dan Filter",
+                                tint = if (isSearchOpen || isFilterActive) AccentBlueBright else TextWhite,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
 
                     // Fitur Transaksi Berulang (Recurring Transactions)
@@ -517,15 +529,38 @@ fun TransactionScreen(
         }
     }
 
-    // Search Bar (if opened)
-        AnimatedVisibility(visible = isSearchOpen) {
+    // Search Bar & Filter (Semua, Pengeluaran, Pemasukan, Transfer)
+    AnimatedVisibility(visible = isSearchOpen) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp, vertical = 4.dp)
+        ) {
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.setSearchQuery(it) },
-                placeholder = { Text("Cari transaksi...", color = TextSubtle) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 4.dp),
+                placeholder = { Text("Cari catatan, kategori, akun...", color = TextSubtle, fontSize = 13.sp) },
+                leadingIcon = {
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = null,
+                        tint = AccentBlueBright,
+                        modifier = Modifier.size(18.dp)
+                    )
+                },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { viewModel.setSearchQuery("") }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = "Hapus",
+                                tint = TextMuted,
+                                modifier = Modifier.size(16.dp)
+                            )
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedTextColor = TextWhite,
                     unfocusedTextColor = TextWhite,
@@ -534,10 +569,60 @@ fun TransactionScreen(
                     focusedBorderColor = AccentBlue,
                     unfocusedBorderColor = DarkCardBorder
                 ),
-                shape = RoundedCornerShape(12.dp),
+                shape = RoundedCornerShape(14.dp),
                 singleLine = true
             )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Filter Type Chips moved inside search button / search area
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                val expenseCount = transactions.count { it.type == TransactionType.EXPENSE }
+                val incomeCount = transactions.count { it.type == TransactionType.INCOME }
+                val transferCount = transactions.count { it.type == TransactionType.TRANSFER }
+
+                listOf(
+                    Triple("Semua", transactions.size, AccentBlue),
+                    Triple("Pengeluaran", expenseCount, ExpenseRed),
+                    Triple("Pemasukan", incomeCount, IncomeGreen),
+                    Triple("Transfer", transferCount, Color(0xFF0284C7))
+                ).forEach { (label, count, activeColor) ->
+                    val isSelected = selectedTypeFilter == label
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = if (isSelected) activeColor else DarkSurfaceElevated,
+                        border = BorderStroke(
+                            1.dp,
+                            if (isSelected) activeColor.copy(alpha = 0.8f) else DarkCardBorder.copy(alpha = 0.6f)
+                        ),
+                        modifier = Modifier
+                            .weight(1f)
+                            .clip(RoundedCornerShape(12.dp))
+                            .clickable { selectedTypeFilter = label }
+                            .testTag("filter_$label")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(vertical = 7.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = if (count > 0 && label != "Semua") "$label ($count)" else label,
+                                fontSize = 10.5.sp,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                                color = if (isSelected) Color.White else TextMuted
+                            )
+                        }
+                    }
+                }
+            }
         }
+    }
 
         // Month Selector: Fixed Calendar Button on the left + Horizontally scrollable Month Chips
         Row(
@@ -616,16 +701,16 @@ fun TransactionScreen(
                 .padding(horizontal = 14.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Main Balance Card - Dynamically matches Theme Color & Dark/Light mode
+            // Main Balance Card - Dynamically matches Theme Color & Dark/Light mode (Compact & Dense)
             item {
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(top = 6.dp),
-                    shape = RoundedCornerShape(24.dp),
+                        .padding(top = 4.dp),
+                    shape = RoundedCornerShape(20.dp),
                     colors = CardDefaults.cardColors(containerColor = Color.Transparent),
                     border = BorderStroke(
-                        width = 1.2.dp,
+                        width = 1.dp,
                         brush = Brush.linearGradient(
                             listOf(
                                 AccentBlue.copy(alpha = 0.85f),
@@ -644,38 +729,30 @@ fun TransactionScreen(
                                     isDark = AppThemeState.isDarkMode
                                 )
                             )
-                            .padding(16.dp)
+                            .padding(horizontal = 14.dp, vertical = 12.dp)
                     ) {
                         Column {
-                            // Top row of balance card
+                            // Top Row: Title & Balance on Left, Action Badges on Right
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
                                 horizontalArrangement = Arrangement.SpaceBetween,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Surface(
-                                    shape = RoundedCornerShape(20.dp),
-                                    color = Color(0x28FFFFFF),
-                                    border = BorderStroke(0.5.dp, Color(0x44FFFFFF))
-                                ) {
-                                    Row(
-                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(7.dp)
-                                                .clip(CircleShape)
-                                                .background(if (AppThemeState.isDarkMode) AccentBlueBright else Color.White)
-                                        )
-                                        Spacer(modifier = Modifier.width(6.dp))
-                                        Text(
-                                            text = "Total Saldo",
-                                            fontSize = 12.sp,
-                                            color = Color.White,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                    }
+                                Column {
+                                    Text(
+                                        text = "Total Saldo",
+                                        fontSize = 12.sp,
+                                        color = Color.White.copy(alpha = 0.85f),
+                                        fontWeight = FontWeight.Medium
+                                    )
+                                    Spacer(modifier = Modifier.height(2.dp))
+                                    Text(
+                                        text = if (isHidden) "Rp ••••••••" else CurrencyHelper.formatRupiah(totalBalance),
+                                        fontSize = 21.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White,
+                                        letterSpacing = (-0.3).sp
+                                    )
                                 }
 
                                 Row(
@@ -684,11 +761,11 @@ fun TransactionScreen(
                                 ) {
                                     // Trophy button
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = Color(0x28FFFFFF),
                                         border = BorderStroke(0.5.dp, Color(0x33FFFFFF)),
                                         modifier = Modifier
-                                            .size(32.dp)
+                                            .size(30.dp)
                                             .clickable { onQuickActionClick("Level") }
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
@@ -696,32 +773,32 @@ fun TransactionScreen(
                                                 imageVector = Icons.Default.WorkspacePremium,
                                                 contentDescription = "Level",
                                                 tint = TrophyYellow,
-                                                modifier = Modifier.size(17.dp)
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
                                     }
 
                                     // Receipt badge count
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = Color(0x28FFFFFF),
                                         border = BorderStroke(0.5.dp, Color(0x33FFFFFF)),
-                                        modifier = Modifier.height(32.dp)
+                                        modifier = Modifier.height(30.dp)
                                     ) {
                                         Row(
-                                            modifier = Modifier.padding(horizontal = 10.dp),
+                                            modifier = Modifier.padding(horizontal = 8.dp),
                                             verticalAlignment = Alignment.CenterVertically
                                         ) {
                                             Icon(
                                                 imageVector = Icons.Default.Receipt,
                                                 contentDescription = null,
                                                 tint = Color.White,
-                                                modifier = Modifier.size(14.dp)
+                                                modifier = Modifier.size(13.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(5.dp))
+                                            Spacer(modifier = Modifier.width(4.dp))
                                             Text(
                                                 text = "${transactions.size}",
-                                                fontSize = 12.sp,
+                                                fontSize = 11.5.sp,
                                                 color = Color.White,
                                                 fontWeight = FontWeight.Bold
                                             )
@@ -730,11 +807,11 @@ fun TransactionScreen(
 
                                     // Eye icon
                                     Surface(
-                                        shape = RoundedCornerShape(12.dp),
+                                        shape = RoundedCornerShape(10.dp),
                                         color = Color(0x28FFFFFF),
                                         border = BorderStroke(0.5.dp, Color(0x33FFFFFF)),
                                         modifier = Modifier
-                                            .size(32.dp)
+                                            .size(30.dp)
                                             .clickable { viewModel.toggleBalanceVisibility() }
                                     ) {
                                         Box(contentAlignment = Alignment.Center) {
@@ -742,7 +819,7 @@ fun TransactionScreen(
                                                 imageVector = if (isHidden) Icons.Default.VisibilityOff else Icons.Default.Visibility,
                                                 contentDescription = "Sembunyikan Saldo",
                                                 tint = Color.White,
-                                                modifier = Modifier.size(17.dp)
+                                                modifier = Modifier.size(16.dp)
                                             )
                                         }
                                     }
@@ -751,36 +828,25 @@ fun TransactionScreen(
 
                             Spacer(modifier = Modifier.height(10.dp))
 
-                            // Large balance amount with premium spacing
-                            Text(
-                                text = if (isHidden) "Rp ••••••••" else CurrencyHelper.formatRupiah(totalBalance),
-                                fontSize = 30.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color.White,
-                                letterSpacing = (-0.5).sp
-                            )
-
-                            Spacer(modifier = Modifier.height(12.dp))
-
-                            // Income & Expense Sub-Cards
+                            // Income & Expense Sub-Cards (Compact)
                             Row(
                                 modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(10.dp)
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
                                 // Income Pill
                                 Surface(
                                     modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = RoundedCornerShape(14.dp),
                                     color = Color(0x1F22C55E),
                                     border = BorderStroke(1.dp, Color(0x3322C55E))
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(32.dp)
+                                                .size(26.dp)
                                                 .clip(CircleShape)
                                                 .background(IncomeGreenSoft),
                                             contentAlignment = Alignment.Center
@@ -789,19 +855,19 @@ fun TransactionScreen(
                                                 imageVector = Icons.AutoMirrored.Filled.TrendingUp,
                                                 contentDescription = null,
                                                 tint = IncomeGreen,
-                                                modifier = Modifier.size(17.dp)
+                                                modifier = Modifier.size(15.dp)
                                             )
                                         }
-                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Column {
                                             Text(
                                                 text = "Pemasukan",
-                                                fontSize = 11.sp,
+                                                fontSize = 10.5.sp,
                                                 color = Color(0xFFBACCEB)
                                             )
                                             Text(
                                                 text = if (isHidden) "Rp •••" else CurrencyHelper.formatRupiah(monthlyIncome),
-                                                fontSize = 13.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color.White
                                             )
@@ -812,17 +878,17 @@ fun TransactionScreen(
                                 // Expense Pill
                                 Surface(
                                     modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(16.dp),
+                                    shape = RoundedCornerShape(14.dp),
                                     color = Color(0x1FF43F5E),
                                     border = BorderStroke(1.dp, Color(0x33F43F5E))
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                                         verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Box(
                                             modifier = Modifier
-                                                .size(32.dp)
+                                                .size(26.dp)
                                                 .clip(CircleShape)
                                                 .background(ExpenseRedSoft),
                                             contentAlignment = Alignment.Center
@@ -831,19 +897,19 @@ fun TransactionScreen(
                                                 imageVector = Icons.AutoMirrored.Filled.TrendingDown,
                                                 contentDescription = null,
                                                 tint = ExpenseRed,
-                                                modifier = Modifier.size(17.dp)
+                                                modifier = Modifier.size(15.dp)
                                             )
                                         }
-                                        Spacer(modifier = Modifier.width(10.dp))
+                                        Spacer(modifier = Modifier.width(8.dp))
                                         Column {
                                             Text(
                                                 text = "Pengeluaran",
-                                                fontSize = 11.sp,
+                                                fontSize = 10.5.sp,
                                                 color = Color(0xFFBACCEB)
                                             )
                                             Text(
                                                 text = if (isHidden) "Rp •••" else CurrencyHelper.formatRupiah(monthlyExpense),
-                                                fontSize = 13.sp,
+                                                fontSize = 12.sp,
                                                 fontWeight = FontWeight.Bold,
                                                 color = Color.White
                                             )
@@ -854,15 +920,15 @@ fun TransactionScreen(
 
                             // Monthly Transfer Indicator if any transfers exist
                             if (monthlyTransfer > 0.0) {
-                                Spacer(modifier = Modifier.height(10.dp))
+                                Spacer(modifier = Modifier.height(6.dp))
                                 Surface(
                                     modifier = Modifier.fillMaxWidth(),
-                                    shape = RoundedCornerShape(14.dp),
+                                    shape = RoundedCornerShape(10.dp),
                                     color = Color(0x1F0284C7),
-                                    border = BorderStroke(1.dp, Color(0x330284C7))
+                                    border = BorderStroke(0.5.dp, Color(0x330284C7))
                                 ) {
                                     Row(
-                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 5.dp),
                                         verticalAlignment = Alignment.CenterVertically,
                                         horizontalArrangement = Arrangement.SpaceBetween
                                     ) {
@@ -871,18 +937,18 @@ fun TransactionScreen(
                                                 imageVector = Icons.Default.SwapHoriz,
                                                 contentDescription = null,
                                                 tint = Color(0xFF38BDF8),
-                                                modifier = Modifier.size(16.dp)
+                                                modifier = Modifier.size(14.dp)
                                             )
-                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Spacer(modifier = Modifier.width(6.dp))
                                             Text(
-                                                text = "Total Transfer & Aset Bulan Ini",
-                                                fontSize = 11.sp,
+                                                text = "Transfer & Aset Bulan Ini",
+                                                fontSize = 10.5.sp,
                                                 color = Color(0xFFBACCEB)
                                             )
                                         }
                                         Text(
                                             text = if (isHidden) "Rp •••" else CurrencyHelper.formatRupiah(monthlyTransfer),
-                                            fontSize = 12.sp,
+                                            fontSize = 11.sp,
                                             fontWeight = FontWeight.Bold,
                                             color = Color(0xFF38BDF8)
                                         )
@@ -942,53 +1008,6 @@ fun TransactionScreen(
                 }
             }
 
-            // Transaction Type Filter Row (Semua, Pengeluaran, Pemasukan, Transfer)
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    val expenseCount = transactions.count { it.type == TransactionType.EXPENSE }
-                    val incomeCount = transactions.count { it.type == TransactionType.INCOME }
-                    val transferCount = transactions.count { it.type == TransactionType.TRANSFER }
-
-                    listOf(
-                        Triple("Semua", transactions.size, AccentBlue),
-                        Triple("Pengeluaran", expenseCount, ExpenseRed),
-                        Triple("Pemasukan", incomeCount, IncomeGreen),
-                        Triple("Transfer", transferCount, Color(0xFF0284C7))
-                    ).forEach { (label, count, activeColor) ->
-                        val isSelected = selectedTypeFilter == label
-                        Surface(
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (isSelected) activeColor else DarkSurfaceElevated,
-                            border = BorderStroke(
-                                1.dp,
-                                if (isSelected) activeColor.copy(alpha = 0.8f) else DarkCardBorder.copy(alpha = 0.6f)
-                            ),
-                            modifier = Modifier
-                                .weight(1f)
-                                .clip(RoundedCornerShape(20.dp))
-                                .clickable { selectedTypeFilter = label }
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(vertical = 9.dp),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Text(
-                                    text = if (count > 0 && label != "Semua") "$label ($count)" else label,
-                                    fontSize = 11.5.sp,
-                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                    color = if (isSelected) Color.White else TextMuted
-                                )
-                            }
-                        }
-                    }
-                }
-            }
 
             // Transactions Grouped by Day
             if (groupedTransactions.isEmpty()) {
